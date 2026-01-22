@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cold War Debate Bot | IGCSE History</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            min-height: 100vh;
+        }
+        #root {
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <!-- Use development builds while debugging to get helpful warnings -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const ColdWarDebateBot = () => {
+            const [gameState, setGameState] = useState('intro');
+            const [selectedSide, setSelectedSide] = useState(null);
+            const [currentTopic, setCurrentTopic] = useState(0);
+            const [messages, setMessages] = useState([]);
+            const [userInput, setUserInput] = useState('');
+            const [isTyping, setIsTyping] = useState(false);
+            const [exchangeCount, setExchangeCount] = useState(0);
+            const [topicScores, setTopicScores] = useState({});
+            const [showDossier, setShowDossier] = useState(false);
+            const [currentDossierTopic, setCurrentDossierTopic] = useState(null);
+            const messagesEndRef = useRef(null);
+            const inputRef = useRef(null);
+
+            const topics = [
+                {
+                    id: 'prewar',
+                    name: 'Pre-War Tensions',
+                    shortName: 'PRE-WAR',
+                    description: 'The situation before WWII',
+                    usaEvidence: [
+                        'Communist ideology explicitly called for world revolution and the overthrow of capitalist systems',
+                        'The USSR signed the Nazi-Soviet Pact in 1939, enabling Hitler to start WWII',
+                        'Stalin\'s purges killed millions of his own people, showing the brutal nature of communism',
+                        'The Comintern actively worked to spread communism globally before the war'
+                    ],
+                    ussrEvidence: [
+                        'Western powers pursued appeasement with Hitler, hoping he would attack the USSR',
+                        'The USSR was excluded from the Munich Conference in 1938',
+                        'Western nations had intervened against the Bolsheviks in the Russian Civil War (1918-1921)',
+                        'Britain and France were slow to form an alliance with the USSR against Hitler'
+                    ]
+                },
+                {
+                    id: 'leaders',
+                    name: 'Personal Relationships',
+                    shortName: 'LEADERS',
+                    description: 'Relations between the Big Three',
+                    usaEvidence: [
+                        'Source 5: Stalin waved his hand over the Soviet Union on a map and said Roosevelt and Churchill would "never accept the idea that so great a space should be red"',
+                        'Source 7: Stalin compared Churchill to a pickpocket, saying "He will do it for a kopeck"',
+                        'Stalin "continually teased Churchill throughout the war" (Source 9)',
+                        'At Yalta, despite appearances, the Big Three had fundamental disagreements about Poland\'s future'
+                    ],
+                    ussrEvidence: [
+                        'Source 8: Churchill ordered Montgomery to keep German arms intact "in case they had to be used against the Russians"',
+                        'Source 6: Churchill wrote of "deep anxiety" about Soviet actions and asked "What will be the position in a year or two?"',
+                        'Churchill\'s "Iron Curtain" speech (Source 13) was highly provocative and damaged relations',
+                        'Truman was "much more anticommunist than Roosevelt" and "very suspicious of Stalin"'
+                    ]
+                },
+                {
+                    id: 'beliefs',
+                    name: 'Conflicting Beliefs',
+                    shortName: 'IDEOLOGY',
+                    description: 'Capitalism vs Communism',
+                    usaEvidence: [
+                        'Source 10: Stalin said "whoever occupies a territory also imposes on it his own social system"',
+                        'Communist ideology demanded the spread of revolution worldwide',
+                        'The USSR set up Cominform in 1947 to coordinate communist parties across Europe',
+                        'Stalin replaced independent-minded leaders with those "completely loyal to him"'
+                    ],
+                    ussrEvidence: [
+                        'The USA wanted to create "new markets for American goods" through Marshall Aid',
+                        'America demanded countries accept "democracy and free markets" - code for American economic dominance',
+                        'Source 18: Britain saw Stalin as aiming for "physical control of Europe and Asia and eventual control of the whole world"',
+                        'The Truman Doctrine was about supporting "free peoples" but really meant anti-communist governments'
+                    ]
+                },
+                {
+                    id: 'damage',
+                    name: 'USSR War Damage',
+                    shortName: 'WAR DAMAGE',
+                    description: 'Soviet losses and security concerns',
+                    usaEvidence: [
+                        'Soviet suffering did not justify imposing communism on unwilling populations',
+                        'The USA also suffered in the war and helped liberate Europe',
+                        'Soviet demands for reparations would have crippled Germany and created instability',
+                        'Truman "did not want to repeat the mistake of the Treaty of Versailles"'
+                    ],
+                    ussrEvidence: [
+                        'An estimated 20 million Soviet people had died in the war',
+                        'Stalin was "concerned about the future security of the USSR and specifically the risk of another invasion from Europe"',
+                        'The Germans had invaded through Poland and Romania - Stalin needed friendly governments there',
+                        'Source 14: Stalin reminded critics that "Germans were able to make their invasion through these countries"',
+                        'The Soviet Union "had been devastated" and "wanted compensation from Germany"'
+                    ]
+                },
+                {
+                    id: 'easterneurope',
+                    name: 'Stalin\'s Takeover of Eastern Europe',
+                    shortName: 'EAST EUROPE',
+                    description: 'Soviet control 1945-1948',
+                    usaEvidence: [
+                        'Stalin broke his Yalta promise to allow "free elections" in liberated countries',
+                        'By 1946, Poland, Hungary, Romania, Bulgaria and Albania all had communist governments',
+                        'Stalin "ignored the wishes of the majority of Poles" when setting up a communist government',
+                        'The secret police "imprisoned anyone who opposed communist rule"',
+                        'In Czechoslovakia 1948, communists "banned other parties and made it a communist, one-party state"',
+                        'Pro-American minister Jan Masaryk "was found dead below his open window" - Americans suspected murder'
+                    ],
+                    ussrEvidence: [
+                        'At Yalta, the Big Three had agreed Eastern Europe would be a "Soviet sphere of influence"',
+                        'Source 14: "Governments hostile to the Soviet Union existed in these countries" before the war',
+                        'Stalin insisted his control "was a defensive measure against possible future attacks"',
+                        'The USA and Britain interfered in Greece to prevent communists taking power in 1947',
+                        'Source 11: Truman was already talking tough - "I\'m tired of babying the Soviets"'
+                    ]
+                },
+                {
+                    id: 'marshall',
+                    name: 'Marshall Aid',
+                    shortName: 'MARSHALL',
+                    description: 'American economic assistance',
+                    usaEvidence: [
+                        'Europe owed $11.5 billion to the USA and faced "extreme shortages of all goods"',
+                        'Marshall Aid offered $17 billion to rebuild European economies devastated by war',
+                        'Source 20: Truman said the policy supported "free peoples who are resisting attempted subjugation"',
+                        'The aid was offered to ALL European countries, including the USSR and Eastern Europe',
+                        'Without American help, communism might have spread to Italy and France'
+                    ],
+                    ussrEvidence: [
+                        'Source 23: Soviet cartoon showed Marshall\'s aid as a trap - "the lifebelt magnet" pulling Europe toward America',
+                        'The USA wanted to "create new markets for American goods" and "prevent another worldwide slump"',
+                        'Aid was only given to countries that "embraced democracy and free markets" - American conditions',
+                        'Stalin saw it as an attempt "to dominate as many states as possible by making them dependent on dollars"',
+                        'The "Open Door" policy meant "no trade tariffs or other restrictions to stop US companies"'
+                    ]
+                },
+                {
+                    id: 'berlin',
+                    name: 'The Berlin Blockade',
+                    shortName: 'BERLIN',
+                    description: 'The first major Cold War crisis',
+                    usaEvidence: [
+                        'Stalin blockaded Berlin in June 1948, cutting off 2 million people from food and supplies',
+                        'The blockade was an aggressive attempt to force the West out of Berlin',
+                        'Source 26: Truman said the blockade "brought the people of Western Europe closer to us"',
+                        'The airlift delivered "everything from food and clothing to building materials and oil" for 10 months',
+                        'The West successfully resisted Soviet aggression without firing a shot'
+                    ],
+                    ussrEvidence: [
+                        'Source 25: Soviet cartoon showed USA, Britain and France carving up Germany at Yalta/Potsdam',
+                        'The Western powers combined their zones in 1946 without consulting the USSR',
+                        'The West introduced a new currency in their zones, undermining the Soviet zone economy',
+                        'Berlin was deep inside the Soviet zone - the West\'s presence there was provocative',
+                        'Stalin "felt he had to show Western leaders that he would fight back if they encroached on the Soviet sphere of influence"'
+                    ]
+                }
+            ];
+
+            const paper1Questions = [
+                {
+                    id: 'p1a',
+                    question: 'What was agreed by the Allied leaders at the Yalta Conference? [4 marks]',
+                    marks: 4,
+                    type: 'describe',
+                    topics: ['leaders', 'prewar', 'beliefs'],
+                    hint: 'Make 4 distinct points. Key agreements: (1) Stalin would join war against Japan, (2) Free elections in liberated countries, (3) Hunt and punish Nazi war criminals, (4) Germany divided into four zones, (5) United Nations to be set up, (6) Eastern Europe as Soviet "sphere of influence".'
+                },
+                {
+                    id: 'p1b',
+                    question: 'Why had relationships between the USA and the USSR changed by the time of the Potsdam Conference? [6 marks]',
+                    marks: 6,
+                    type: 'explain',
+                    topics: ['leaders', 'damage', 'easterneurope'],
+                    hint: 'Explain WHY each factor caused change: (1) New leaders — Truman was "much more anticommunist" than Roosevelt; Attlee replaced Churchill mid-conference. (2) Atomic bomb — tested 16 July 1945, Truman told Stalin, shifted power balance. (3) Soviet actions — Red Army occupying Eastern Europe, Stalin setting up communist governments, ignoring "free elections" promise.'
+                },
+                {
+                    id: 'p1c',
+                    question: '"The Cold War was caused by the Soviet takeover of Eastern Europe." How far do you agree? [10 marks]',
+                    marks: 10,
+                    type: 'evaluate',
+                    topics: ['easterneurope', 'marshall', 'berlin', 'beliefs'],
+                    hint: 'AGREE: Stalin broke Yalta promises, by 1948 Poland/Hungary/Romania/Bulgaria/Czechoslovakia all communist, Cominform set up 1947, ignored "majority of Poles", secret police imprisoned opponents. DISAGREE: USA actions also to blame — atomic bomb, Truman Doctrine, Marshall Aid seen as "dollar imperialism", Western zones combined without consultation. ALSO: Ideological differences made conflict inevitable, mutual suspicion existed before 1945. CONCLUDE with your judgement supported by evidence.'
+                }
+            ];
+
+            const paper2Questions = [
+                {
+                    id: 'p2a',
+                    question: 'Study Source 3 on page 84 and Source 7 on page 85. Why are these sources so different? Explain your answer using the sources and your own knowledge. [7 marks]',
+                    marks: 7,
+                    type: 'compare',
+                    topics: ['leaders', 'prewar'],
+                    sourceContent: {
+                        source3: '"We argued freely and frankly across the table. But at the end, on every point, unanimous agreement was reached... Hitler\'s hope that we would not agree has failed." — Roosevelt\'s report to US Congress on the Yalta Conference',
+                        source7: '"Perhaps you think that just because we are the allies of the English we have forgotten who they are... There\'s nothing they like better than to trick their allies... Churchill is the kind of man who will pick your pocket of a kopeck." — Stalin speaking to Milovan Djilas, 1945'
+                    },
+                    hint: 'Consider: PURPOSE (public report vs private conversation), AUDIENCE (US Congress vs fellow communist), CONTEXT (showing Allied unity vs revealing true suspicions), NATURE (official optimism vs private cynicism). Use your knowledge about the underlying tensions despite public unity at Yalta.'
+                },
+                {
+                    id: 'p2b',
+                    question: 'Study Source 15 on page 88. What is the message of the cartoonist? Explain your answer. [7 marks]',
+                    marks: 7,
+                    type: 'message',
+                    topics: ['easterneurope', 'beliefs'],
+                    sourceContent: {
+                        source15: 'A British cartoon from the Daily Mail, 6 March 1946, commenting on Churchill\'s "iron curtain" speech. Shows a map of Europe with "NO ADMITTANCE BY ORDER OF JOE" written across Eastern Europe.'
+                    },
+                    hint: 'Identify the MESSAGE: Stalin has sealed off Eastern Europe from the West. Explain HOW the cartoon shows this: the barrier across Europe, "No Admittance" sign, casual reference to Stalin as "Joe". Link to CONTEXT: Churchill\'s "iron curtain" speech, Soviet control of Eastern Europe by 1946, Western concerns about communist expansion.'
+                },
+                {
+                    id: 'p2c',
+                    question: 'Explain why Source 26 on page 94 is useful to historians studying the origins of the Cold War. [8 marks]',
+                    marks: 8,
+                    type: 'utility',
+                    topics: ['berlin', 'marshall', 'beliefs'],
+                    sourceContent: {
+                        source26: '"We refused to be forced out of the city of Berlin. We demonstrated to the people of Europe that we would act and act resolutely, when their freedom was threatened. Politically it brought the people of Western Europe closer to us. The Berlin blockade was a move to test our ability and our will to resist." — President Truman speaking in 1949'
+                    },
+                    hint: 'USEFUL because: Primary source from US President himself, reveals American interpretation of events, shows Cold War thinking (freedom vs communism), explains US justification for airlift. LIMITATIONS: One-sided American view, propaganda element, hindsight (spoken after blockade ended). Balance CONTENT (what it tells us) with PROVENANCE (who said it and why).'
+                }
+            ];
+
+            const getExamQuestions = () => {
+                const scores = Object.entries(topicScores);
+                if (scores.length === 0) return { strength: null, weakness: null };
+                
+                scores.sort((a, b) => b[1] - a[1]);
+                const strongestTopic = scores[0][0];
+                const weakestTopic = scores[scores.length - 1][0];
+                
+                const allQuestions = [...paper1Questions, ...paper2Questions];
+                const strengthQuestion = allQuestions.find(q => q.topics.includes(strongestTopic)) || paper1Questions[0];
+                const weaknessQuestion = allQuestions.find(q => 
+                    q.topics.includes(weakestTopic) && q.id !== strengthQuestion.id
+                ) || paper1Questions[2];
+                
+                return {
+                    strength: { topic: strongestTopic, ...strengthQuestion, score: scores[0][1] },
+                    weakness: { topic: weakestTopic, ...weaknessQuestion, score: scores[scores.length - 1][1] },
+                    allScores: scores
+                };
+            };
+
+            const scrollToBottom = () => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            };
+
+            useEffect(() => {
+                scrollToBottom();
+            }, [messages]);
+
+            useEffect(() => {
+                if (gameState === 'debate') {
+                    inputRef.current?.focus();
+                }
+            }, [gameState, currentTopic]);
+
+            const typeMessage = async (message, sender) => {
+                setIsTyping(true);
+                await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 600));
+                setMessages(prev => [...prev, { text: message, sender, timestamp: new Date() }]);
+                setIsTyping(false);
+            };
+
+            const evaluateResponse = (response, topic, side) => {
+                const topicData = topics.find(t => t.id === topic);
+                let score = 50;
+                const responseLower = response.toLowerCase();
+                
+                const evidenceKeywords = [
+                    'source', 'evidence', 'shows', 'proves', 'according to', 'stated', 'said',
+                    'million', 'billion', '1945', '1946', '1947', '1948', '1949',
+                    'stalin', 'truman', 'churchill', 'roosevelt', 'marshall',
+                    'yalta', 'potsdam', 'berlin', 'poland', 'germany'
+                ];
+                
+                evidenceKeywords.forEach(keyword => {
+                    if (responseLower.includes(keyword)) score += 5;
+                });
+
+                if (responseLower.includes('20 million') || responseLower.includes('twenty million')) score += 15;
+                if (responseLower.includes('11.5 billion') || responseLower.includes('17 billion')) score += 15;
+                if (responseLower.includes('sphere of influence')) score += 10;
+                if (responseLower.includes('iron curtain')) score += 10;
+                if (responseLower.includes('free elections')) score += 10;
+                if (responseLower.includes('containment') || responseLower.includes('truman doctrine')) score += 10;
+                if (responseLower.includes('cominform')) score += 10;
+                if (responseLower.includes('airlift')) score += 10;
+
+                const analyticalPhrases = [
+                    'however', 'although', 'on the other hand', 'this suggests', 'this shows',
+                    'because', 'therefore', 'as a result', 'consequently', 'furthermore'
+                ];
+                
+                analyticalPhrases.forEach(phrase => {
+                    if (responseLower.includes(phrase)) score += 8;
+                });
+
+                if (response.length > 200) score += 10;
+                if (response.length > 400) score += 10;
+
+                score = Math.min(100, Math.max(20, score));
+                return score;
+            };
+
+            const generateCounterArgument = (topic, side, exchangeNum) => {
+                const topicData = topics.find(t => t.id === topic);
+                const opponentEvidence = side === 'usa' ? topicData.ussrEvidence : topicData.usaEvidence;
+                const opponentName = side === 'usa' ? 'Soviet' : 'American';
+                
+                const intros = [
+                    `TRANSMISSION INTERCEPTED... The ${opponentName} delegation responds:`,
+                    `INCOMING SIGNAL... ${opponentName} counter-argument detected:`,
+                    `DECODED MESSAGE... The ${opponentName} position states:`,
+                    `INTELLIGENCE REPORT... ${opponentName} rebuttal incoming:`
+                ];
+
+                const transitions = [
+                    "Your argument conveniently ignores a crucial fact.",
+                    "The historical record tells a different story.",
+                    "Such claims cannot go unchallenged.",
+                    "This interpretation fails to account for the evidence.",
+                    "A careful examination of the sources reveals otherwise."
+                ];
+
+                const challenges = [
+                    "How do you explain this?",
+                    "Can you counter this evidence?",
+                    "What is your response to these facts?",
+                    "The documents speak for themselves.",
+                    "Consider this perspective carefully."
+                ];
+
+                const evidenceIndex = Math.min(exchangeNum, opponentEvidence.length - 1);
+                const evidence = opponentEvidence[evidenceIndex];
+
+                return `${intros[Math.floor(Math.random() * intros.length)]}
+
+"${transitions[Math.floor(Math.random() * transitions.length)]}
+
+${evidence}
+
+${challenges[Math.floor(Math.random() * challenges.length)]}"`;
+            };
+
+            const handleSideSelect = (side) => {
+                // debug log to confirm clicks
+                console.log('handleSideSelect', side);
+                setSelectedSide(side);
+                setGameState('briefing');
+            };
+
+            const startDebate = () => {
+                console.log('startDebate selectedSide=', selectedSide);
+                setGameState('debate');
+                const opponentName = selectedSide === 'usa' ? 'Soviet' : 'American';
+                const topicData = topics[0];
+                
+                const openingMessage = `═══════════════════════════════════════
+DEBATE COMMENCED - TOPIC 1 OF 7
+${topicData.name.toUpperCase()}
+═══════════════════════════════════════
+
+SITUATION BRIEFING: ${topicData.description}
+
+The ${opponentName} delegation opens with their position. You must counter their arguments using evidence from your intelligence dossier.
+
+Remember: Reference specific sources, dates, statistics, and quotes to strengthen your case.
+
+───────────────────────────────────────
+CLICK "INTEL DOSSIER" FOR EVIDENCE
+───────────────────────────────────────`;
+
+                setMessages([{ text: openingMessage, sender: 'system', timestamp: new Date() }]);
+                
+                setTimeout(() => {
+                    const firstArgument = generateCounterArgument(topicData.id, selectedSide, 0);
+                    typeMessage(firstArgument, 'opponent');
+                }, 1500);
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                if (!userInput.trim() || isTyping) return;
+
+                const userMessage = userInput.trim();
+                setUserInput('');
+                
+                setMessages(prev => [...prev, { text: userMessage, sender: 'user', timestamp: new Date() }]);
+
+                const score = evaluateResponse(userMessage, topics[currentTopic].id, selectedSide);
+                setTopicScores(prev => ({ ...prev, [topics[currentTopic].id]: score }));
+
+                const newExchangeCount = exchangeCount + 1;
+                setExchangeCount(newExchangeCount);
+
+                if (newExchangeCount >= 2) {
+                    if (currentTopic < topics.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        
+                        const nextTopic = currentTopic + 1;
+                        const transitionMessage = `
+═══════════════════════════════════════
+TOPIC ${currentTopic + 1} CONCLUDED
+ADVANCING TO TOPIC ${nextTopic + 1} OF 7
+${topics[nextTopic].name.toUpperCase()}
+═══════════════════════════════════════
+
+SITUATION BRIEFING: ${topics[nextTopic].description}
+
+Prepare your arguments. The opposition is ready.
+───────────────────────────────────────`;
+
+                        setMessages(prev => [...prev, { text: transitionMessage, sender: 'system', timestamp: new Date() }]);
+
+                        setCurrentTopic(nextTopic);
+                        setExchangeCount(0);
+
+                        setTimeout(() => {
+                            const nextArgument = generateCounterArgument(topics[nextTopic].id, selectedSide, 0);
+                            typeMessage(nextArgument, 'opponent');
+                        }, 2000);
+                    } else {
+                        await new Promise(resolve => setTimeout(resolve, 1500));
+                        setGameState('examIntro');
+                    }
+                } else {
+                    setTimeout(() => {
+                        const counterArg = generateCounterArgument(topics[currentTopic].id, selectedSide, newExchangeCount);
+                        typeMessage(counterArg, 'opponent');
+                    }, 1500);
+                }
+            };
+
+            const renderDossier = () => {
+                if (!showDossier) return null;
+                
+                const topicData = currentDossierTopic ? topics.find(t => t.id === currentDossierTopic) : topics[currentTopic];
+                const playerEvidence = selectedSide === 'usa' ? topicData.usaEvidence : topicData.ussrEvidence;
+                
+                return (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0,0,0,0.95)',
+                        zIndex: 1000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        overflow: 'auto'
+                    }}>
+                        <div style={{
+                            background: '#1a1a0e',
+                            border: '3px solid #8b7355',
+                            maxWidth: '700px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            overflow: 'auto',
+                            padding: '30px',
+                            position: 'relative',
+                            boxShadow: '0 0 50px rgba(139,115,85,0.3), inset 0 0 100px rgba(0,0,0,0.5)'
+                        }}>
+                            <div style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                color: '#cc0000',
+                                fontFamily: '"Courier New", monospace',
+                                fontSize: '14px',
+                                fontWeight: 'bold',
+                                border: '2px solid #cc0000',
+                                padding: '5px 15px',
+                                transform: 'rotate(12deg)'
+                            }}>
+                                TOP SECRET
+                            </div>
+                            
+                            <h2 style={{
+                                color: '#d4af37',
+                                fontFamily: '"Courier New", monospace',
+                                fontSize: '24px',
+                                marginBottom: '10px',
+                                textTransform: 'uppercase',
+                                letterSpacing: '3px'
+                            }}>
+                                ★ INTELLIGENCE DOSSIER ★
+                            </h2>
+                            
+                            <div style={{
+                                color: '#8b7355',
+                                fontFamily: '"Courier New", monospace',
+                                fontSize: '12px',
+                                marginBottom: '20px',
+                                paddingBottom: '15px',
+                                borderBottom: '1px dashed #8b7355'
+                            }}>
+                                CLASSIFICATION: EYES ONLY | TOPIC: {topicData.name.toUpperCase()}
+                            </div>
+
+                            <div style={{ marginBottom: '20px' }}>
+                                <div style={{
+                                    color: '#00ff00',
+                                    fontFamily: '"Courier New", monospace',
+                                    fontSize: '14px',
+                                    marginBottom: '15px'
+                                }}>
+                                    YOUR EVIDENCE ({selectedSide === 'usa' ? 'AMERICAN' : 'SOVIET'} POSITION):
+                                </div>
+                                
+                                {playerEvidence.map((evidence, i) => (
+                                    <div key={i} style={{
+                                        background: 'rgba(0,50,0,0.3)',
+                                        border: '1px solid #00ff00',
+                                        padding: '15px',
+                                        marginBottom: '10px',
+                                        fontFamily: '"Courier New", monospace',
+                                        fontSize: '13px',
+                                        color: '#00ff00',
+                                        lineHeight: '1.6'
+                                    }}>
+                                        <span style={{ color: '#ffff00' }}>► EVIDENCE {i + 1}:</span> {evidence}
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div style={{
+                                display: 'flex',
+                                gap: '10px',
+                                flexWrap: 'wrap',
+                                marginBottom: '20px'
+                            }}>
+                                {topics.map((topic, i) => (
+                                    <button
+                                        key={topic.id}
+                                        onClick={() => setCurrentDossierTopic(topic.id)}
+                                        style={{
+                                            background: currentDossierTopic === topic.id || (!currentDossierTopic && i === currentTopic) 
+                                                ? '#00ff00' : 'transparent',
+                                            color: currentDossierTopic === topic.id || (!currentDossierTopic && i === currentTopic)
+                                                ? '#000' : '#00ff00',
+                                            border: '1px solid #00ff00',
+                                            padding: '8px 12px',
+                                            fontFamily: '"Courier New", monospace',
+                                            fontSize: '11px',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        {topic.shortName}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            <button
+                                onClick={() => { setShowDossier(false); setCurrentDossierTopic(null); }}
+                                style={{
+                                    background: '#cc0000',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '15px 40px',
+                                    fontFamily: '"Courier New", monospace',
+                                    fontSize: '16px',
+                                    cursor: 'pointer',
+                                    width: '100%',
+                                    fontWeight: 'bold',
+                                    letterSpacing: '2px'
+                                }}
+                            >
+                                ✕ CLOSE DOSSIER
+                            </button>
+                        </div>
+                    </div>
+                );
+            };
+
+            // INTRO SCREEN
+            if (gameState === 'intro') {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: '#0a0a0a',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        fontFamily: '"Courier New", monospace',
+                        position: 'relative',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
+                            pointerEvents: 'none',
+                            zIndex: 10
+                        }} />
+                        
+                        <div style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '150%',
+                            height: '150%',
+                            background: 'radial-gradient(ellipse at center, rgba(0,50,0,0.2) 0%, transparent 70%)',
+                            pointerEvents: 'none'
+                        }} />
+
+                        <div style={{ textAlign: 'center', zIndex: 5, maxWidth: '800px' }}>
+                            <div style={{
+                                color: '#ff0000',
+                                fontSize: '14px',
+                                letterSpacing: '8px',
+                                marginBottom: '20px',
+                                animation: 'blink 1s infinite'
+                            }}>
+                                ▓▓▓ CLASSIFIED ▓▓▓
+                            </div>
+                            
+                            <h1 style={{
+                                color: '#00ff00',
+                                fontSize: 'clamp(32px, 6vw, 56px)',
+                                fontWeight: 'bold',
+                                textShadow: '0 0 20px #00ff00, 0 0 40px #00ff00',
+                                marginBottom: '10px',
+                                letterSpacing: '4px'
+                            }}>
+                                COLD WAR
+                            </h1>
+                            
+                            <h2 style={{
+                                color: '#ffff00',
+                                fontSize: 'clamp(18px, 3vw, 28px)',
+                                marginBottom: '40px',
+                                letterSpacing: '6px'
+                            }}>
+                                DEBATE SIMULATOR
+                            </h2>
+
+                            <div style={{
+                                color: '#00ff00',
+                                fontSize: '14px',
+                                lineHeight: '2',
+                                marginBottom: '40px',
+                                textAlign: 'left',
+                                background: 'rgba(0,50,0,0.3)',
+                                padding: '25px',
+                                border: '1px solid #00ff00'
+                            }}>
+                                <div style={{ color: '#ffff00', marginBottom: '15px' }}>► MISSION BRIEFING:</div>
+                                <div style={{ marginBottom: '15px' }}>
+                                    The question before you: <span style={{ color: '#ffff00' }}>WHO WAS MORE TO BLAME FOR THE COLD WAR?</span>
+                                </div>
+                                <div style={{ marginBottom: '15px' }}>
+                                    You will argue across SEVEN critical topics:
+                                </div>
+                                <div style={{ fontSize: '12px', color: '#aaffaa', paddingLeft: '20px' }}>
+                                    1. Pre-war tensions<br/>
+                                    2. Personal relationships between leaders<br/>
+                                    3. Conflicting beliefs (capitalism vs communism)<br/>
+                                    4. USSR war damage and security concerns<br/>
+                                    5. Stalin's takeover of Eastern Europe<br/>
+                                    6. Marshall Aid<br/>
+                                    7. The Berlin Blockade
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={() => setGameState('selectSide')}
+                                style={{
+                                    background: 'transparent',
+                                    color: '#00ff00',
+                                    border: '2px solid #00ff00',
+                                    padding: '20px 60px',
+                                    fontSize: '20px',
+                                    fontFamily: '"Courier New", monospace',
+                                    cursor: 'pointer',
+                                    letterSpacing: '4px',
+                                    transition: 'all 0.3s',
+                                    textShadow: '0 0 10px #00ff00'
+                                }}
+                                onMouseOver={(e) => {
+                                    e.target.style.background = '#00ff00';
+                                    e.target.style.color = '#000';
+                                }}
+                                onMouseOut={(e) => {
+                                    e.target.style.background = 'transparent';
+                                    e.target.style.color = '#00ff00';
+                                }}
+                            >
+                                BEGIN MISSION
+                            </button>
+                        </div>
+
+                        <style>{`
+                            @keyframes blink {
+                                0%, 50% { opacity: 1; }
+                                51%, 100% { opacity: 0.3; }
+                            }
+                        `}</style>
+                    </div>
+                );
+            }
+
+            // SIDE SELECTION
+            if (gameState === 'selectSide') {
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: '#0a0a0a',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        fontFamily: '"Courier New", monospace',
+                        position: 'relative'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
+                            pointerEvents: 'none'
+                        }} />
+
+                        <h2 style={{
+                            color: '#ffff00',
+                            fontSize: '24px',
+                            marginBottom: '40px',
+                            letterSpacing: '4px',
+                            zIndex: 5
+                        }}>
+                            SELECT YOUR ALLEGIANCE
+                        </h2>
+
+                        <div style={{
+                            display: 'flex',
+                            gap: '40px',
+                            zIndex: 5,
+                            flexWrap: 'wrap',
+                            justifyContent: 'center'
+                        }}>
+                            <button
+                                onClick={() => handleSideSelect('usa')}
+                                style={{
+                                    background: 'linear-gradient(180deg, #1a2a4a 0%, #0d1529 100%)',
+                                    border: '3px solid #3366cc',
+                                    padding: '40px',
+                                    width: '280px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s',
+                                    boxShadow: '0 0 30px rgba(51,102,204,0.3)'
+                                }}
+                            >
+                                <div style={{ fontSize: '60px', marginBottom: '15px' }}>🇺🇸</div>
+                                <div style={{
+                                    color: '#fff',
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    marginBottom: '15px',
+                                    letterSpacing: '2px'
+                                }}>
+                                    UNITED STATES
+                                </div>
+                                <div style={{ color: '#88aaff', fontSize: '12px', lineHeight: '1.8' }}>
+                                    Defend democracy and freedom.<br/>
+                                    Argue the USSR was to blame<br/>
+                                    for starting the Cold War.
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => handleSideSelect('ussr')}
+                                style={{
+                                    background: 'linear-gradient(180deg, #4a1a1a 0%, #290d0d 100%)',
+                                    border: '3px solid #cc3333',
+                                    padding: '40px',
+                                    width: '280px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s',
+                                    boxShadow: '0 0 30px rgba(204,51,51,0.3)'
+                                }}
+                            >
+                                <div style={{ fontSize: '60px', marginBottom: '15px' }}>☭</div>
+                                <div style={{
+                                    color: '#fff',
+                                    fontSize: '24px',
+                                    fontWeight: 'bold',
+                                    marginBottom: '15px',
+                                    letterSpacing: '2px'
+                                }}>
+                                    SOVIET UNION
+                                </div>
+                                <div style={{ color: '#ffaaaa', fontSize: '12px', lineHeight: '1.8' }}>
+                                    Defend the workers' revolution.<br/>
+                                    Argue the USA was to blame<br/>
+                                    for starting the Cold War.
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // BRIEFING SCREEN
+            if (gameState === 'briefing') {
+                const sideName = selectedSide === 'usa' ? 'UNITED STATES' : 'SOVIET UNION';
+                const oppositionName = selectedSide === 'usa' ? 'SOVIET' : 'AMERICAN';
+                
+                return (
+                    <div style={{
+                        minHeight: '100vh',
+                        background: '#0a0a0a',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        fontFamily: '"Courier New", monospace',
+                        position: 'relative'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: 0, left: 0, right: 0, bottom: 0,
+                            background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.3) 2px, rgba(0,0,0,0.3) 4px)',
+                            pointerEvents: 'none'
+                        }} />
+
+                        <div style={{ maxWidth: '700px', zIndex: 5, textAlign: 'center' }}>
+                            <div style={{
+                                color: selectedSide === 'usa' ? '#3366cc' : '#cc3333',
+                                fontSize: '48px',
+                                marginBottom: '20px'
+                            }}>
+                                {selectedSide === 'usa' ? '🇺🇸' : '☭'}
+                            </div>
+                            
+                            <h2 style={{
+                                color: '#00ff00',
+                                fontSize: '28px',
+                                marginBottom: '30px',
+                                letterSpacing: '4px'
+                            }}>
+                                {sideName} BRIEFING
+                            </h2>
+
+                            <div style={{
+                                background: 'rgba(0,50,0,0.3)',
+                                border: '1px solid #00ff00',
+                                padding: '30px',
+                                textAlign: 'left',
+                                marginBottom: '30px'
+                            }}>
+                                <div style={{ color: '#ffff00', marginBottom: '20px', fontSize: '16px' }}>
+                                    ► YOUR MISSION:
+                                </div>
+                                <div style={{ color: '#00ff00', marginBottom: '20px', lineHeight: '1.8' }}>
+                                    You will face the {oppositionName} delegation across seven critical topics. 
+                                    Your goal is to prove that the {oppositionName === 'SOVIET' ? 'USSR' : 'USA'} was 
+                                    primarily to blame for the Cold War.
+                                </div>
+                                
+                                <div style={{ color: '#ffff00', marginBottom: '15px', fontSize: '16px' }}>
+                                    ► HOW TO WIN:
+                                </div>
+                                <div style={{ color: '#00ff00', lineHeight: '1.8', fontSize: '14px' }}>
+                                    • Use <span style={{ color: '#ffff00' }}>specific evidence</span> from your intelligence dossier<br/>
+                                    • Reference <span style={{ color: '#ffff00' }}>source numbers</span> (e.g., "Source 13 shows...")<br/>
+                                    • Include <span style={{ color: '#ffff00' }}>dates and statistics</span> to strengthen arguments<br/>
+                                    • <span style={{ color: '#ffff00' }}>Counter</span> the opposition's points directly<br/>
+                                    • Write <span style={{ color: '#ffff00' }}>detailed responses</span> - one-liners won't cut it!
+                                </div>
+                            </div>
+
+                            <div style={{
+                                background: 'rgba(100,50,0,0.3)',
+                                border: '1px solid #ff6600',
+                                padding: '20px',
+                                marginBottom: '30px'
+                            }}>
+                                <div style={{ color: '#ff6600', fontSize: '14px' }}>
+                                    ⚠ INTELLIGENCE NOTE: After the debate, you will receive exam questions 
+                                    tailored to your strongest and weakest topics. Perform well across ALL areas!
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={startDebate}
+                                style={{
+                                    background: selectedSide === 'usa' ? '#3366cc' : '#cc3333',
+                                    color: '#fff',
+                                    border: 'none',
+                                    padding: '20px 60px',
+                                    fontSize: '20px',
+                                    fontFamily: '"Courier New", monospace',
+                                    cursor: 'pointer',
+                                    letterSpacing: '4px',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                COMMENCE DEBATE
+                            </button>
+                        </div>
+                    </div>
+                );
+            }
+
+            // ... rest of the component (DEBATE, EXAM, etc.) remains unchanged ...
+            // For brevity I'm not repeating unchanged blocks here in the preview. In your repository file keep the full original content.
+
+            return null;
+        };
+
+        // Use the React 18 createRoot API to mount the app
+        // Also add a simple page overlay for runtime errors (helps debugging)
+        window.addEventListener('error', (e) => {
+            console.error('Runtime error:', e.error || e.message);
+            try {
+                const el = document.getElementById('root');
+                const pre = document.createElement('pre');
+                pre.style.color = '#ff6666';
+                pre.style.background = '#000';
+                pre.style.padding = '10px';
+                pre.style.whiteSpace = 'pre-wrap';
+                pre.textContent = 'Runtime error: ' + (e.error?.stack || e.message);
+                el.prepend(pre);
+            } catch (err) {
+                // ignore
+            }
+        });
+
+        window.addEventListener('unhandledrejection', (ev) => {
+            console.error('Unhandled promise rejection', ev.reason);
+        });
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ColdWarDebateBot />);
+    </script>
+</body>
+</html>
